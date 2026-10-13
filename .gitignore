@@ -4,3 +4,7 @@ Masked - */
 *.lnk
 desktop.ini
 Thumbs.db
+docs/showcase/export.log
+docs/showcase/showcase.webp
+docs/showcase/showcase-stills.png
+docs/showcase/_peek_*.png

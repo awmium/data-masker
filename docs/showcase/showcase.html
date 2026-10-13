@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920,height=1080">
+<meta name="awm-motion" content="w=1920,h=1080">
+<title>Data Masker showcase</title>
+<style>
+@font-face{font-family:"Newsreader";src:url("_kit/fonts/newsreader-latin.woff2") format("woff2");font-weight:200 800}
+@font-face{font-family:"Newsreader";font-style:italic;src:url("_kit/fonts/newsreader-italic-latin.woff2") format("woff2");font-weight:200 800}
+@font-face{font-family:"Jakarta";src:url("_kit/fonts/plus-jakarta-sans-latin.woff2") format("woff2");font-weight:200 800}
+@font-face{font-family:"JBM";src:url("_kit/fonts/jetbrains-mono-latin.woff2") format("woff2");font-weight:100 800}
+html,body{margin:0;background:#141311;overflow:hidden}
+.stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:#141311}
+.stage>svg{position:absolute;left:0;top:0;width:1920px;height:1080px;display:block}
+.sans{font-family:"Jakarta"} .mono{font-family:"JBM"} .serif{font-family:"Newsreader"}
+
+/* ---------- the app, copied from ui/index.html (dark theme), every state driven by draw(t) ---------- */
+.win{width:1320px;height:860px;background:#141311;color:#ECEAE4;font-family:"Jakarta",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow:hidden;display:flex;flex-direction:column;
+  --bg:#141311;--card:#191816;--surface:#1D1C19;--text:#ECEAE4;--muted:#97938A;--line:#2B2A26;--idle:#3A3833;--accent:#FF3458;--link:#FF3458;
+  --grad:linear-gradient(90deg,#6C65DE,#955BC4,#CB4F96,#E65684,#FD4A4A);
+  --serif:"Newsreader",Georgia,serif;--sans:"Jakarta",system-ui,sans-serif;--mono:"JBM",ui-monospace,monospace}
+.win *{box-sizing:border-box;margin:0;padding:0}
+.win :where(button){font:inherit;color:inherit;background:none;border:0}
+.titlebar{height:32px;flex:none;display:flex;align-items:center;gap:9px;padding:0 0 0 12px;background:#1B1A18;border-bottom:1px solid #26251F;
+  font:400 12px/1 "Segoe UI",var(--sans);color:#CFCBC2}
+.titlebar .tb-mark{width:15px;height:13px}
+.titlebar .ctl{margin-left:auto;display:flex;height:100%}
+.titlebar .ctl span{width:46px;display:grid;place-items:center;color:#B9B5AC;font-size:11px}
+.app{flex:1;display:grid;grid-template-rows:auto 1fr auto;min-height:0}
+.top{display:flex;align-items:center;gap:16px;padding:18px 28px;border-bottom:1px solid var(--line)}
+.mark{height:26px;width:auto;color:var(--text)}
+.path{font:400 14px/1 var(--mono);color:var(--muted);display:flex;align-items:center}
+.path b{color:var(--text);font-weight:500}
+.cursor{display:inline-block;width:.62em;height:1.12em;margin-left:8px;background:var(--grad)}
+.top-r{margin-left:auto;display:flex;align-items:center;gap:18px;font:400 12px/1 var(--mono);color:var(--muted)}
+.engine{display:flex;align-items:center;gap:8px}
+.engine .dot{width:7px;height:7px;border-radius:50%;background:var(--text)}
+.icon-btn{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(300px,360px) 1fr minmax(300px,340px);min-height:0}
+.col{min-height:0;overflow:hidden;padding:26px 28px 30px}
+.col+.col{border-left:1px solid var(--line)}
+.eyebrow{font:400 12.5px/1 var(--mono);color:var(--muted);margin-bottom:12px}
+.eyebrow .last,.grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1{font:400 34px/1.08 var(--serif);letter-spacing:-.02em;margin-bottom:22px}
+h1 em,.grad-word{font-style:italic;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.06em}
+.sec{margin-top:26px}
+.sec:first-child{margin-top:0}
+.sec-h{display:flex;align-items:baseline;gap:8px;font:400 12px/1 var(--mono);color:var(--muted);margin-bottom:12px}
+.sec-h::before{content:"#";color:var(--idle)}
+.drop{position:relative;border:1px dashed var(--idle);border-radius:12px;padding:22px 18px 18px}
+.drop-t{font:400 19px/1.2 var(--serif);margin-bottom:4px}
+.drop-s{font:400 12px/1.5 var(--mono);color:var(--muted);margin-bottom:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:500 12.5px/1 var(--mono);padding:10px 13px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text)}
+.btn.ghost{background:none;color:var(--muted)}
+.toggle{font:400 12.5px/1 var(--mono);padding:9px 12px;border:1px solid var(--line);border-radius:8px;color:var(--muted);display:inline-flex;align-items:center;gap:9px}
+.toggle .box{width:10px;height:10px;border:1px solid var(--muted);border-radius:2px}
+.toggle.on{color:var(--text);border-color:var(--idle);background:var(--surface)}
+.toggle.on .box{background:var(--accent);border-color:var(--accent)}
+.seg{display:grid;gap:8px}
+.seg.two{grid-template-columns:1fr 1fr}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.opt{position:relative;text-align:left;padding:12px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.opt b{display:block;font:500 13px/1 var(--mono);margin-bottom:7px}
+.opt span{display:block;font:400 11.5px/1.35 var(--mono);color:var(--muted)}
+.opt.small{padding:9px 10px;text-align:center}
+.opt.small b{margin:0;font-weight:400;color:var(--muted)}
+.opt.small.on b{color:var(--text)}
+/* selection: the 1 px gradient border, as an overlay so it can cross-fade */
+.hl{position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:var(--grad);pointer-events:none;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.fill{position:absolute;inset:0;border-radius:inherit;background:var(--surface);pointer-events:none}
+.opt>b,.opt>span:not(.hl):not(.fill){position:relative}
+.kv{font:400 12.5px/1.7 var(--mono);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 15px}
+.kv .c{color:var(--idle)}
+.kv dl{display:grid;grid-template-columns:62px 1fr;gap:2px 10px;margin-top:6px}
+.kv dt{color:var(--muted)} .kv dd{color:var(--text)}
+.kv .row{margin-top:12px}
+.col.settings{display:flex;flex-direction:column;padding:0}
+.set-scroll{flex:1;min-height:0;overflow:hidden;padding:26px 28px 22px}
+.run{flex:none;padding:16px 28px 14px;border-top:1px solid var(--line)}
+.prim-wrap{position:relative;height:44px}
+.primary{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;font:500 13.5px/1 var(--mono);padding:0 16px;
+  border-radius:10px;background:var(--text);color:var(--bg)}
+.primary.stop{background:var(--surface);color:var(--text);border:1px solid var(--idle)}
+.bar{height:2px;background:var(--line);border-radius:2px;margin-top:12px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--grad)}
+.run-note{font:400 11.5px/1.4 var(--mono);color:var(--muted);margin-top:9px;min-height:16px}
+.call{font:400 13px/1 var(--mono);display:flex;align-items:center;gap:9px}
+.call .dot{width:8px;height:8px;border-radius:50%;background:var(--grad)}
+.result{font:400 12.5px/1 var(--mono);color:var(--muted);margin:9px 0 12px 3px}
+.rows{list-style:none;position:relative}
+.r{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:6px;padding:8px 8px 8px 4px;border-radius:8px;
+  font:400 12.5px/1.25 var(--mono);background:var(--card)}
+.r .br{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.r .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r .nm small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.r .st{color:var(--muted);font-size:11.5px;text-align:right;white-space:nowrap}
+.r .st .done{color:var(--text)}
+.spin{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.empty{position:absolute;left:0;right:0;top:0;font:400 12.5px/1.6 var(--mono);color:var(--muted);padding:6px 4px}
+.list-foot{display:flex;gap:8px;margin-top:12px}
+.swap{display:grid}
+.swap>*{grid-area:1/1}
+.pv{display:flex;flex-direction:column;height:100%;min-height:0}
+.pv-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px}
+.pv-title{min-width:0;flex:1}
+.pv-title h2{font:400 26px/1.15 var(--serif);letter-spacing:-.015em;white-space:nowrap}
+.pv-title p{font:400 12px/1 var(--mono);color:var(--muted);margin-bottom:9px}
+.tabs{display:flex;border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px;flex:none}
+.tab{position:relative;font:400 12px/1 var(--mono);padding:8px 12px;border-radius:6px;color:var(--muted)}
+.tab .fill{border-radius:6px}
+.tab>span:not(.fill){position:relative}
+.stage-box{position:relative;flex:1;min-height:0;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;
+  display:grid;place-items:center}
+.ph{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ph-in{max-width:340px;margin:0 auto}
+.ph .big{font:400 30px/1.1 var(--serif);letter-spacing:-.015em;margin:14px 0 10px}
+.ph p{font:400 12.5px/1.6 var(--mono);color:var(--muted)}
+.ph-mark{height:46px;width:auto;color:var(--text)}
+.frame{position:relative}
+.frame img{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:4px}
+.handle{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--grad)}
+.knob{position:absolute;top:50%;left:50%;width:28px;height:28px;transform:translate(-50%,-50%);border-radius:50%;background:var(--bg);
+  border:1px solid var(--muted);display:grid;place-items:center;font:500 12px/1 var(--mono);color:var(--text);white-space:nowrap}
+.pv-meta{margin-top:14px;display:flex;align-items:center;font:400 12px/1 var(--mono);color:var(--muted);min-height:34px}
+.pv-meta .line{display:flex;align-items:center;gap:18px;width:100%;white-space:nowrap;min-width:0}
+.pv-meta .path-out{overflow:hidden;text-overflow:ellipsis;max-width:330px}
+.pv-meta b{color:var(--text);font-weight:500}
+.pv-meta .btn{margin-left:auto}
+.status{display:flex;align-items:center;gap:14px;padding:9px 28px;border-top:1px solid var(--line);font:400 11.5px/1 var(--mono);color:var(--muted)}
+.status .sep{color:var(--idle)}
+.status .now{color:var(--text)}
+.status .keys{margin-left:auto;display:flex;gap:14px}
+.status kbd{font:inherit;color:var(--text)}
+</style>
+<script src="_kit/motion.js"></script>
+</head>
+<body>
+<div class="stage">
+<svg id="world" viewBox="0 0 1920 1080" text-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#6C65DE"/><stop offset=".3" stop-color="#955BC4"/><stop offset=".6" stop-color="#CB4F96"/>
+      <stop offset=".8" stop-color="#E65684"/><stop offset="1" stop-color="#FD4A4A"/>
+    </linearGradient>
+    <clipPath id="thumbClip"><rect x="10" y="10" width="64" height="36" rx="3"/></clipPath>
+  </defs>
+  <rect width="1920" height="1080" fill="#141311"/>
+
+  <!-- the app window: 1320 x 860 (title bar + the real app layout) at 1.06 -->
+  <g transform="translate(260.4 40) scale(1.06)">
+    <rect x="-.5" y="-.5" width="1321" height="861" rx="8" fill="none" stroke="#2B2A26"/>
+    <foreignObject x="0" y="0" width="1320" height="860">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="win" id="win">
+        <div class="titlebar">
+          <svg class="tb-mark" viewBox="86 92 360 316"><polygon points="160,404 214,404 284,96 230,96" fill="url(#g)"/><polygon points="276,404 330,404 400,96 346,96" fill="url(#g)"/><polygon points="126,184 412,184 400,238 114,238" fill="url(#g)"/><polygon points="102,288 388,288 376,342 90,342" fill="url(#g)"/><rect x="402" y="352" width="40" height="52" fill="#ECEAE4"/></svg>
+          <span>Data Masker</span>
+          <span class="ctl"><span><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 5.5H10" stroke="currentColor"/></svg></span><span>&#x25A2;</span><span>&#x2715;</span></span>
+        </div>
+        <div class="app">
+          <header class="top">
+            <svg class="mark" width="29" height="26" viewBox="86 92 360 316"><polygon points="160,404 214,404 284,96 230,96" fill="url(#g)"/><polygon points="276,404 330,404 400,96 346,96" fill="url(#g)"/><polygon points="126,184 412,184 400,238 114,238" fill="url(#g)"/><polygon points="102,288 388,288 376,342 90,342" fill="url(#g)"/><rect x="402" y="352" width="40" height="52" fill="currentColor"/></svg>
+            <span class="path">awmium/<b>data-masker</b><i class="cursor" id="cursor"></i></span>
+            <div class="top-r">
+              <span class="engine"><span class="dot"></span><span>ocr ready</span></span>
+              <span>offline</span>
+              <span class="icon-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor"/></svg></span>
+            </div>
+          </header>
+
+          <main class="grid">
+            <section class="col" id="colQueue">
+              <p class="eyebrow">&#x276F; mask --numbers &#x2192; <span class="last">share</span></p>
+              <h1>Numbers <em>hidden</em>, story kept.</h1>
+              <div class="drop" id="drop">
+                <span class="hl" id="dropHl" style="border-radius:12px;opacity:0"></span>
+                <p class="drop-t">Drop images or folders</p>
+                <p class="drop-s">png &#xB7; jpg &#xB7; webp &#xB7; bmp &#xB7; tif &#xB7; runs fully offline</p>
+                <div class="row">
+                  <button class="btn">add images</button>
+                  <button class="btn">add folder</button>
+                  <button class="toggle"><span class="box"></span>subfolders</button>
+                </div>
+              </div>
+              <div class="sec">
+                <p class="call"><span class="dot"></span>List(queue/)</p>
+                <p class="result swap"><span id="q0">&#x23BF; empty</span><span id="q1" style="opacity:0">&#x23BF; 1 image &#xB7; 1 folder</span><span id="q2" style="opacity:0">&#x23BF; 1 image &#xB7; 1 folder &#xB7; 1 done &#xB7; 114 numbers masked</span></p>
+                <ul class="rows">
+                  <li class="empty" id="emptyRow">nothing queued yet. drop a screenshot or a whole folder.</li>
+                  <li class="r" id="row" style="opacity:0">
+                    <span class="br">&#x276F;</span>
+                    <span class="nm">Showcase Report (light).png<small>samples/</small></span>
+                    <span class="st swap"><span id="s0">queued</span><span id="s1" style="opacity:0"><span class="spin" id="spin">&#x280B;</span> masking</span><span id="s2" class="done" style="opacity:0">114 masked &#xB7; 4.2s</span></span>
+                  </li>
+                </ul>
+                <div class="list-foot" id="listFoot" style="opacity:0">
+                  <button class="btn ghost" id="clearBtn">clear all</button>
+                  <button class="btn ghost">reset status</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="col" id="colPreview">
+              <div class="pv">
+                <div class="pv-head">
+                  <div class="pv-title">
+                    <p class="swap"><span id="pp0">preview/</span><span id="pp1" style="opacity:0">preview/samples/</span></p>
+                    <h2 class="swap"><span id="pn0">Nothing selected</span><span id="pn1" style="opacity:0">Showcase Report (light).png</span></h2>
+                  </div>
+                  <div class="tabs" id="tabs">
+                    <button class="tab" id="tabO"><span class="fill"></span><span>original</span></button>
+                    <button class="tab" id="tabM"><span class="fill"></span><span>masked</span></button>
+                    <button class="tab" id="tabC"><span class="fill"></span><span>compare</span></button>
+                  </div>
+                </div>
+                <div class="stage-box" id="stageBox">
+                  <div class="ph" id="ph"><div class="ph-in">
+                    <svg class="ph-mark" width="52" height="46" viewBox="86 92 360 316"><polygon points="160,404 214,404 284,96 230,96" fill="url(#g)"/><polygon points="276,404 330,404 400,96 346,96" fill="url(#g)"/><polygon points="126,184 412,184 400,238 114,238" fill="url(#g)"/><polygon points="102,288 388,288 376,342 90,342" fill="url(#g)"/><rect x="402" y="352" width="40" height="52" fill="currentColor"/></svg>
+                    <p class="big">Bring a <em class="grad-word">screenshot</em>.</p>
+                    <p>Every number gets found by two OCR engines and painted over in the same font, colour and weight.</p>
+                  </div></div>
+                  <div class="frame" id="frame" style="opacity:0">
+                    <img src="report.png" alt="">
+                    <img src="report-masked.png" alt="" id="imgM" style="opacity:0">
+                    <div class="handle" id="handle" style="opacity:0;left:50%"><div class="knob">&#x2039; &#x203A;</div></div>
+                  </div>
+                </div>
+                <div class="pv-meta swap">
+                  <span class="line" id="m1" style="opacity:0">not masked yet</span>
+                  <span class="line" id="m2" style="opacity:0"><span><b>114</b> numbers masked</span><span>4.2s</span><span class="path-out">&#x2192; Masked - samples/Masked - Showcase Report (light).png</span><button class="btn">open folder &#x2197;</button></span>
+                </div>
+              </div>
+            </section>
+
+            <section class="col settings" id="colSettings">
+              <div class="set-scroll">
+                <div class="sec">
+                  <p class="sec-h">mode</p>
+                  <div class="seg two">
+                    <button class="opt" id="optFull"><span class="fill" id="fFull"></span><span class="hl" id="hFull"></span><b>full mask</b><span>1,284 &#x2192; #####</span></button>
+                    <button class="opt"><b>hash digits</b><span>1,284 &#x2192; #,###</span></button>
+                    <button class="opt" id="optFake"><span class="fill" id="fFake" style="opacity:0"></span><span class="hl" id="hFake" style="opacity:0"></span><b>fake numbers</b><span>1,284 &#x2192; 7,051</span></button>
+                    <button class="opt"><b>ratio scale</b><span>all &#xD7; one factor</span></button>
+                  </div>
+                </div>
+                <div class="sec">
+                  <p class="sec-h">keep</p>
+                  <div class="row">
+                    <button class="toggle on"><span class="box"></span>dates &amp; labels</button>
+                    <button class="toggle on" style="opacity:.4"><span class="box"></span>percentages</button>
+                  </div>
+                </div>
+                <div class="sec">
+                  <p class="sec-h">align new text</p>
+                  <div class="seg three">
+                    <button class="opt small on"><span class="fill"></span><span class="hl"></span><b>left</b></button>
+                    <button class="opt small"><b>center</b></button>
+                    <button class="opt small"><b>right</b></button>
+                  </div>
+                </div>
+                <div class="sec">
+                  <p class="sec-h">scan</p>
+                  <div class="seg two">
+                    <button class="opt"><span class="fill"></span><span class="hl"></span><b>standard</b><span>two engines + verify</span></button>
+                    <button class="opt"><b>thorough</b><span>+ tiles &#xB7; slower</span></button>
+                  </div>
+                </div>
+                <div class="sec">
+                  <p class="sec-h">output</p>
+                  <div class="kv"><span class="c"># ~/output</span>
+                    <dl><dt>folder</dt><dd>auto &#xB7; Masked - &lt;folder&gt; beside the images</dd><dt>files</dt><dd>Masked - &lt;name&gt;</dd></dl>
+                  </div>
+                </div>
+              </div>
+              <div class="run" id="run">
+                <div class="prim-wrap" id="runBtn">
+                  <span class="primary" id="r0" style="opacity:.35"><span>mask images</span><span>&#x276F;</span></span>
+                  <span class="primary" id="r1" style="opacity:0"><span>mask 1 image</span><span>&#x276F;</span></span>
+                  <span class="primary stop" id="r2" style="opacity:0"><span>stop after this image</span><span>&#x276F;</span></span>
+                </div>
+                <div class="bar"><i id="barFill"></i></div>
+                <p class="run-note swap"><span id="n1" style="opacity:0">done &#xB7; 1/1 images &#xB7; 114 numbers masked &#xB7; 4.2s</span></p>
+              </div>
+            </section>
+          </main>
+
+          <footer class="status">
+            <span>data-masker/</span><span class="sep">&#x2502;</span>
+            <span class="now swap"><span id="st0">ready</span><span id="st1" style="opacity:0">added 1 image</span><span id="st2" style="opacity:0">masking Showcase Report (light).png</span><span id="st3" style="opacity:0">done &#xB7; 1/1 images &#xB7; 114 numbers masked &#xB7; 4.2s</span></span>
+            <span class="keys"><span><kbd>&#x21B5;</kbd> mask</span><span><kbd>j</kbd> <kbd>k</kbd> move</span><span><kbd>del</kbd> remove</span><span><kbd>o</kbd> open</span><span><kbd>t</kbd> theme</span></span>
+            <span class="sep">&#x2502;</span><span>engine 2.1 &#xB7; 4 threads</span>
+          </footer>
+        </div>
+      </div>
+    </foreignObject>
+  </g>
+
+  <text x="160" y="1036" class="serif" font-size="40" fill="#ECEAE4">Share the report, <tspan font-style="italic" fill="url(#g)">not the numbers.</tspan></text>
+  <text x="160" y="1066" class="mono" font-size="16" fill="#97938A">data-masker · every number masked · fully offline</text>
+
+  <!-- the dragged file: an OS-style drag ghost that travels with the pointer -->
+  <g id="chip" opacity="0">
+    <rect x="0" y="0" width="300" height="56" rx="8" fill="#1D1C19" stroke="#3A3833"/>
+    <image href="report.png" x="10" y="10" width="64" height="36" clip-path="url(#thumbClip)" preserveAspectRatio="xMidYMid slice"/>
+    <rect x="10" y="10" width="64" height="36" rx="3" fill="none" stroke="#3A3833"/>
+    <text x="86" y="26" class="mono" font-size="13" fill="#ECEAE4">Showcase Report (light).png</text>
+    <text x="86" y="44" class="mono" font-size="11.5" fill="#97938A">1920 × 1080 · png</text>
+  </g>
+
+  <g id="pointer" opacity="0">
+    <circle id="ring" r="6" fill="none" stroke="#ECEAE4" stroke-width="1.5" opacity="0"/>
+    <path id="arrow" d="M0 0 L0 22 L6 16 L10 26 L14 24 L10 15 L18 15 Z" fill="#ECEAE4" stroke="#141311" stroke-width="1.2"/>
+  </g>
+</svg>
+<svg id="hud" viewBox="0 0 1920 1080"></svg>
+</div>
+<script>
+// ---------- storyboard (ms) ----------
+// 0 full · 1000 zoom to the drop zone · 3400 drag a report in · 5000 drop, row rises · 6200 to settings
+// 8950 pick fake numbers · 10350 mask · 13300 done · 13500 to the preview · 16850 compare · 18100 drag the slider
+// 22000 pull back · 24550 clear all · 25300 back to the opening frame
+const LOOP = 26400, W = 1920, H = 1080;
+const T = {
+  pointerIn: 3300, pointerOut: 25300,
+  drop: 5000, rowIn: 5150, pickFake: 8950, run: 10350, done: 13300,
+  compare: 16850, clear: 24550,
+};
+const CLICKS = [T.drop, T.pickFake, T.run, T.compare, 18050, T.clear];
+const CUT = [[16900, 17400, 0, 50], [18100, 19100, 50, 88], [19300, 20700, 88, 12], [20900, 21700, 12, 50]];
+let cam, PT, P = {};
+
+const $ = id => document.getElementById(id);
+const op = (id, v) => { $(id).style.opacity = M.f3(v); };
+const SPIN = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+// screen rect of an element at the opening frame, where screen and world coincide
+function box(id) { const r = $(id).getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, r: r.right, b: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; }
+
+function setup() {
+  // the preview frame is the report's 16:9 fitted inside the stage box, like the app's object-fit: contain
+  const sb = $('stageBox'), iw = sb.clientWidth - 20, ih = sb.clientHeight - 20, k = Math.min(iw / 1920, ih / 1080);
+  $('frame').style.width = M.f3(1920 * k) + 'px';
+  $('frame').style.height = M.f3(1080 * k) + 'px';
+  $('row').style.opacity = 0;
+
+  const q = box('colQueue'), dr = box('drop'), lf = box('listFoot'), set = box('colSettings'), fake = box('optFake');
+  const run = box('runBtn'), pv = box('colPreview'), tabC = box('tabC'), fr = box('frame'), clr = box('clearBtn'), win = box('win');
+  P.drop = { x: dr.cx + 20, y: dr.cy + 6 };
+  P.start = { x: dr.x - 300, y: dr.y - 40 };
+  P.fake = { x: fake.x + fake.w * .74, y: fake.y + fake.h * .66 };
+  P.run = { x: run.x + run.w * .84, y: run.cy + 6 };
+  P.tabC = { x: tabC.cx + 8, y: tabC.cy + 7 };
+  P.knob = c => ({ x: fr.x + fr.w * c / 100, y: fr.cy + 4 });
+  P.clear = { x: clr.cx + 6, y: clr.cy + 6 };
+
+  const VIEWS = {
+    full: { x: 0, y: 0, s: 1 },
+    queue: M.fit(P.start.x - 40, win.y + 70, q.r + 24, lf.b + 60, W, H, 70),
+    settings: M.fit(set.x - 10, set.y + 10, set.r + 10, set.b - 10, W, H, 60),
+    preview: M.fit(pv.x + 8, pv.y + 14, pv.r - 8, pv.b - 20, W, H, 50),
+  };
+  cam = M.camera(VIEWS, [[1000, 3300, 'full', 'queue'], [6200, 8500, 'queue', 'settings'],
+    [13500, 15800, 'settings', 'preview'], [22000, 24300, 'preview', 'full']]);
+
+  const k50 = P.knob(50), k88 = P.knob(88), k12 = P.knob(12);
+  const after = { x: P.drop.x + 26, y: P.drop.y + 40 }, rest = { x: k50.x + 60, y: k50.y + 90 };
+  PT = M.pointer([
+    { t: 3300, ...P.start }, { t: 3450, ...P.start }, { t: 4950, ...P.drop }, { t: 5700, ...after }, { t: 7500, ...after },
+    { t: 8800, ...P.fake }, { t: 9400, ...P.fake }, { t: 10250, ...P.run }, { t: 13600, ...P.run }, { t: 16700, ...P.tabC },
+    { t: 17100, ...P.tabC }, { t: 18000, ...k50 }, { t: 18100, ...k50 }, { t: 19100, ...k88 }, { t: 19300, ...k88 },
+    { t: 20700, ...k12 }, { t: 20900, ...k12 }, { t: 21700, ...k50 }, { t: 22300, ...rest }, { t: 23300, ...rest },
+    { t: 24400, ...P.clear }, { t: LOOP, ...P.clear },
+  ]);
+}
+
+function cutAt(t) {
+  let c = 0;
+  for (const [a, b, from, to] of CUT) { if (t < a) break; c = t >= b ? to : M.lerp(from, to, M.ease.inOut(M.seg(t, a, b))); }
+  return c;
+}
+
+function draw(t) {
+  const c = cam(t);
+  M.setView($('world'), c, W, H);
+  const fadeIn = (a, d = 260) => M.ease.out(M.seg(t, a, a + d));
+  const clr = fadeIn(T.clear + 60, 340);                         // everything returns to the opening state
+  const added = fadeIn(T.rowIn, 300) * (1 - clr);
+  const masking = M.win(t, T.run + 60, T.done, 200, 200);
+  const done = fadeIn(T.done, 300) * (1 - clr);
+  const fakeOn = fadeIn(T.pickFake + 60, 220) * (1 - clr);
+
+  // cursor block in the path title: the app's 1 s blink
+  op('cursor', (t % 1000) < 500 ? 1 : .15);
+
+  // drop zone lights up while the file hovers it
+  const over = M.win(t, 4350, T.drop + 120, 220, 220);
+  op('dropHl', over);
+  $('drop').style.transform = `scale(${M.f3(1 + .01 * over)})`;
+  $('drop').style.borderColor = over > .5 ? 'transparent' : '';
+
+  // queue
+  $('row').style.opacity = M.f3(added);
+  $('row').style.transform = `translateY(${M.f3(8 * (1 - added))}px)`;
+  op('emptyRow', 1 - added);
+  op('listFoot', added);
+  op('q0', 1 - added); op('q1', added * (1 - done)); op('q2', done);
+  op('s0', 1 - Math.max(masking, done)); op('s1', masking); op('s2', done);
+  $('spin').textContent = SPIN[Math.floor(t / 90) % SPIN.length];
+
+  // settings: fake numbers replaces full mask
+  op('hFull', 1 - fakeOn); op('fFull', 1 - fakeOn); op('hFake', fakeOn); op('fFake', fakeOn);
+
+  // run button: disabled → mask 1 image → stop → mask 1 image
+  const runOn = M.win(t, T.run + 60, T.done, 160, 220);
+  op('r0', .35 * (1 - added)); op('r1', added * (1 - runOn)); op('r2', runOn);
+  const prog = M.ease.inOut(M.seg(t, T.run + 120, T.done - 60));
+  $('barFill').style.width = M.f3(100 * prog * (1 - clr)) + '%';
+  op('n1', done);
+
+  // status bar
+  const s1 = added * (1 - Math.max(masking, done));
+  op('st0', 1 - added); op('st1', s1); op('st2', masking); op('st3', done);
+
+  // preview
+  op('ph', 1 - added); op('frame', added);
+  op('pp0', 1 - added); op('pp1', added); op('pn0', 1 - added); op('pn1', added);
+  op('m1', added * (1 - done)); op('m2', done);
+  op('imgM', done);
+  const comp = M.win(t, T.compare + 50, T.clear + 400, 300, 340), cut = cutAt(t);
+  $('imgM').style.clipPath = `inset(0 0 0 ${M.f3(cut)}%)`;
+  op('handle', comp);
+  $('handle').style.left = M.f3(cut) + '%';
+  // tabs: pressed fill and enabled state
+  const pressedO = added * (1 - done), pressedC = comp, pressedM = 1 - Math.max(pressedO, pressedC);
+  const fills = { tabO: pressedO, tabM: pressedM, tabC: pressedC };
+  for (const id in fills) {
+    $(id).querySelector('.fill').style.opacity = M.f3(fills[id]);
+    const enabled = id === 'tabO' ? added : done;
+    $(id).style.opacity = M.f3(.35 + .65 * enabled);
+    $(id).style.color = M.mix('#97938A', '#ECEAE4', fills[id]);
+  }
+
+  // the dragged file rides beside the pointer, at a constant screen size
+  const p = PT(t), k = M.click(t, CLICKS), s = 1 / c.s;
+  const carry = M.win(t, 3350, T.drop + 220, 200, 220);
+  M.set($('chip'), { opacity: carry * .96, transform: `translate(${M.f3(p.x + 16 * s)} ${M.f3(p.y + 20 * s)}) scale(${M.f3(s * (1 - .06 * M.seg(t, T.drop, T.drop + 220)))})` });
+
+  // pointer, with press dip and ring; held down while dragging the slider
+  const dragging = Math.max(M.win(t, 18050, 21750, 80, 120), M.win(t, 3400, T.drop, 80, 60));
+  M.set($('pointer'), { opacity: M.win(t, T.pointerIn, T.pointerOut, 250, 400),
+    transform: `translate(${M.f3(p.x)} ${M.f3(p.y)}) scale(${M.f3((1 - .12 * Math.max(k.press, dragging * .6)) * s)})` });
+  M.set($('ring'), { r: M.lerp(4, 16, M.ease.out(k.ring)), opacity: k.ring ? .55 * (1 - k.ring) : 0 });
+}
+
+M.boot(LOOP, draw, ['18px "Jakarta"', '40px "Newsreader"', 'italic 40px "Newsreader"', '16px "JBM"'], setup);
+</script>
+</body>
+</html>

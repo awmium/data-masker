@@ -2,6 +2,10 @@
 
 Masks every number in screenshots so they can be shared. Runs fully offline, nothing is uploaded.
 
+[![Data Masker: drop a report, pick fake numbers, mask it, then compare before and after](docs/showcase/showcase.gif)](docs/showcase/showcase.mp4)
+
+A 26 second tour: drop a report in, pick a mode, mask it, then drag the compare slider. [Watch the full-resolution MP4](docs/showcase/showcase.mp4).
+
 | before | after (hash mode) |
 |---|---|
 | ![a fictional sales report](docs/before.png) | ![the same report with every number masked](docs/after.png) |
@@ -49,6 +53,10 @@ Expect about 5-10 s for a full-screen report screenshot once the engine is warm 
 - In ratio mode, percentages are kept, because scaling every value by the same factor leaves shares and growth rates unchanged.
 - Thorough scan adds more scales, an inverted pass for dark themes and overlapping tiles. Slower; use it when a number slips through.
 - Always glance at the preview before sharing. OCR can miss tiny or stylised text.
+
+## Showcase
+
+`docs/showcase/showcase.html` is the tour above, built from the app's own interface and the fictional report. Open it in a browser and it loops live: every frame is a pure function of time, so it renders the same way each run. The GIF, MP4 and poster next to it are exports of that page. Its fonts (Newsreader, Plus Jakarta Sans, JetBrains Mono) are under the SIL Open Font License, as noted in `ui/fonts/FONTS.md`.
 
 ## Setup (once per machine)
 
